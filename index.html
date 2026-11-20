@@ -54,9 +54,9 @@ th{background:var(--soft)}
 <a class="top" href="#" aria-label="Nahoru">↑</a>
 <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
 <script>
-// Čte SESIT.md živě z repa SCHULE: push do SCHULE = web je aktuální, tohle repo se nemění.
+// Čte SESIT.md z tohoto repa; publikuj.sh ho sem kopíruje ze SCHULE/cestina.
 const slug = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-fetch('https://raw.githubusercontent.com/shotbylaro/SCHULE/main/cestina/SESIT.md?' + Date.now()).then(r => r.text()).then(md => {
+fetch('SESIT.md?' + Date.now()).then(r => r.text()).then(md => {
   const parts = md.split(/^(?=# )/m).filter(p => p.startsWith('# ') && !p.startsWith('# Sešit'));
   const out = document.getElementById('out'), toc = document.getElementById('toc');
   const items = parts.map(p => {

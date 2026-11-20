@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sešit – Čeština</title>
+<style>
+:root{--bg:#f4f6f9;--paper:#fff;--ink:#16202c;--mute:#5d6b7d;--edge:#d6dde6;--acc:#0a58ca;--soft:#eaf1fb;--ans:#11804a}
+@media (prefers-color-scheme:dark){:root{--bg:#0e141d;--paper:#161f2c;--ink:#e6ecf4;--mute:#9aabc0;--edge:#2a384c;--acc:#6ea8ff;--soft:#1c2a3e;--ans:#4fd18b;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,Segoe UI,sans-serif}
+a{color:var(--acc)}
+.wrap{display:grid;grid-template-columns:280px 1fr;max-width:1200px;margin:0 auto;gap:24px;padding:16px}
+nav{position:sticky;top:16px;align-self:start;max-height:calc(100vh - 32px);display:flex;flex-direction:column;background:var(--paper);border:1px solid var(--edge);border-radius:10px;padding:12px}
+nav h1{font-size:18px;margin:0 0 8px}
+#q{width:100%;padding:8px 10px;border:1px solid var(--edge);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+#count{font-size:13px;color:var(--mute);margin:6px 0}
+#toc{overflow:auto;list-style:none;margin:0;padding:0}
+#toc a{display:block;padding:4px 6px;border-radius:6px;text-decoration:none;color:var(--ink);font-size:14px}
+#toc a:hover{background:var(--soft)}
+main{min-width:0}
+article{background:var(--paper);border:1px solid var(--edge);border-radius:10px;padding:20px 24px;margin-bottom:20px;scroll-margin-top:16px}
+article h1{font-size:24px;margin:0 0 6px}
+article h2{font-size:17px;margin:22px 0 8px;padding-bottom:4px;border-bottom:2px solid var(--soft);color:var(--acc)}
+blockquote{margin:0;color:var(--mute);font-size:14px}
+blockquote p{margin:0}
+table{border-collapse:collapse;width:100%;font-size:14px;display:block;overflow-x:auto}
+th,td{border:1px solid var(--edge);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:var(--soft)}
+.cards{list-style:none;padding:0;display:grid;gap:8px}
+.cards li{border:1px solid var(--edge);border-radius:8px;padding:8px 12px;cursor:pointer;background:var(--bg)}
+.cards .a{display:none;color:var(--ans)}
+.cards li.open .a{display:inline}
+.cards li:not(.open)::after{content:" ▸ klikni";color:var(--mute);font-size:12px}
+.top{position:fixed;right:16px;bottom:16px;background:var(--acc);color:#fff;border-radius:50%;width:44px;height:44px;display:grid;place-items:center;text-decoration:none;font-size:20px}
+@media (max-width:800px){
+ .wrap{grid-template-columns:1fr;padding:12px}
+ nav{position:static;max-height:none}
+ #toc{max-height:40vh}
+ article{padding:16px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+ <nav>
+  <h1>Sešit – Čeština</h1>
+  <input id="q" type="search" placeholder="Hledat (autor, dílo, směr…)" aria-label="Hledat">
+  <div id="count">Načítám…</div>
+  <ul id="toc"></ul>
+ </nav>
+ <main id="out"></main>
+</div>
+<a class="top" href="#" aria-label="Nahoru">↑</a>
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script>
+// Čte SESIT.md živě z repa SCHULE: push do SCHULE = web je aktuální, tohle repo se nemění.
+const slug = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+fetch('https://raw.githubusercontent.com/shotbylaro/SCHULE/main/cestina/SESIT.md?' + Date.now()).then(r => r.text()).then(md => {
+  const parts = md.split(/^(?=# )/m).filter(p => p.startsWith('# ') && !p.startsWith('# Sešit'));
+  const out = document.getElementById('out'), toc = document.getElementById('toc');
+  const items = parts.map(p => {
+    const title = p.match(/^# (.*)/)[1].trim(), id = slug(title);
+    const art = document.createElement('article');
+    art.id = id;
+    art.innerHTML = marked.parse(p.replace(/^\s*---\s*$/gm, ''));
+    // Kartičky: odpověď schovaná, klik ji ukáže
+    art.querySelectorAll('h2').forEach(h => {
+      const ul = h.nextElementSibling;
+      if (!/Kartičky/.test(h.textContent) || !ul || ul.tagName !== 'UL') return;
+      ul.className = 'cards';
+      ul.querySelectorAll('li').forEach(li => {
+        const s = [...li.querySelectorAll('strong')].find(x => /Odpověď/.test(x.textContent));
+        if (!s) return;
+        const a = document.createElement('span'); a.className = 'a';
+        while (s.nextSibling) a.appendChild(s.nextSibling);
+        a.prepend(s); li.appendChild(a);
+        li.onclick = () => li.classList.toggle('open');
+      });
+    });
+    out.appendChild(art);
+    const li = document.createElement('li');
+    li.innerHTML = `<a href="#${id}"></a>`; li.firstChild.textContent = title;
+    toc.appendChild(li);
+    return {art, li, text: slug(p)};
+  });
+  const count = document.getElementById('count');
+  const show = n => count.textContent = `${n} z ${items.length} zápisů`;
+  show(items.length);
+  document.getElementById('q').oninput = e => {
+    const q = slug(e.target.value); let n = 0;
+    items.forEach(i => { const ok = !q || i.text.includes(q); i.art.hidden = i.li.hidden = !ok; n += ok; });
+    show(n);
+  };
+  if (location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView();
+}).catch(() => document.getElementById('count').textContent = 'Sešit se nepodařilo načíst.');
+</script>
+</body>
+</html>

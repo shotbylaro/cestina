@@ -1,99 +1,22 @@
-<!doctype html>
-<html lang="cs">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sešit – Čeština</title>
-<style>
-:root{--bg:#f4f6f9;--paper:#fff;--ink:#16202c;--mute:#5d6b7d;--edge:#d6dde6;--acc:#0a58ca;--soft:#eaf1fb;--ans:#11804a}
-@media (prefers-color-scheme:dark){:root{--bg:#0e141d;--paper:#161f2c;--ink:#e6ecf4;--mute:#9aabc0;--edge:#2a384c;--acc:#6ea8ff;--soft:#1c2a3e;--ans:#4fd18b;color-scheme:dark}}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,Segoe UI,sans-serif}
-a{color:var(--acc)}
-.wrap{display:grid;grid-template-columns:280px 1fr;max-width:1200px;margin:0 auto;gap:24px;padding:16px}
-nav{position:sticky;top:16px;align-self:start;max-height:calc(100vh - 32px);display:flex;flex-direction:column;background:var(--paper);border:1px solid var(--edge);border-radius:10px;padding:12px}
-nav h1{font-size:18px;margin:0 0 8px}
-#q{width:100%;padding:8px 10px;border:1px solid var(--edge);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
-#count{font-size:13px;color:var(--mute);margin:6px 0}
-#toc{overflow:auto;list-style:none;margin:0;padding:0}
-#toc a{display:block;padding:4px 6px;border-radius:6px;text-decoration:none;color:var(--ink);font-size:14px}
-#toc a:hover{background:var(--soft)}
-main{min-width:0}
-article{background:var(--paper);border:1px solid var(--edge);border-radius:10px;padding:20px 24px;margin-bottom:20px;scroll-margin-top:16px}
-article h1{font-size:24px;margin:0 0 6px}
-article h2{font-size:17px;margin:22px 0 8px;padding-bottom:4px;border-bottom:2px solid var(--soft);color:var(--acc)}
-blockquote{margin:0;color:var(--mute);font-size:14px}
-blockquote p{margin:0}
-table{border-collapse:collapse;width:100%;font-size:14px;display:block;overflow-x:auto}
-th,td{border:1px solid var(--edge);padding:6px 8px;text-align:left;vertical-align:top}
-th{background:var(--soft)}
-.cards{list-style:none;padding:0;display:grid;gap:8px}
-.cards li{border:1px solid var(--edge);border-radius:8px;padding:8px 12px;cursor:pointer;background:var(--bg)}
-.cards .a{display:none;color:var(--ans)}
-.cards li.open .a{display:inline}
-.cards li:not(.open)::after{content:" ▸ klikni";color:var(--mute);font-size:12px}
-.top{position:fixed;right:16px;bottom:16px;background:var(--acc);color:#fff;border-radius:50%;width:44px;height:44px;display:grid;place-items:center;text-decoration:none;font-size:20px}
-@media (max-width:800px){
- .wrap{grid-template-columns:1fr;padding:12px}
- nav{position:static;max-height:none}
- #toc{max-height:40vh}
- article{padding:16px}
-}
-</style>
-</head>
-<body>
-<div class="wrap">
- <nav>
-  <h1>Sešit – Čeština</h1>
-  <input id="q" type="search" placeholder="Hledat (autor, dílo, směr…)" aria-label="Hledat">
-  <div id="count">Načítám…</div>
-  <ul id="toc"></ul>
- </nav>
- <main id="out"></main>
-</div>
-<a class="top" href="#" aria-label="Nahoru">↑</a>
-<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<!doctype html><html lang="cs"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>Čeština</title>
+<style>body{font:16px system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;margin:0;padding:16px;box-sizing:border-box;background:#0f0a1f;color:#f1ecff}
+form{display:grid;gap:8px;max-width:320px;width:100%}input,button{font:inherit;padding:10px;border-radius:8px;border:2px solid #352a57;background:#1b1233;color:inherit}button{cursor:pointer;font-weight:600}#e{color:#ff5c70;min-height:1.2em}</style></head>
+<body><form id="f"><label for="p">Heslo</label><input id="p" type="password" autofocus autocomplete="current-password">
+<button>Vstoupit</button><div id="e" role="alert"></div></form>
 <script>
-// Čte SESIT.md z tohoto repa; publikuj.sh ho sem kopíruje ze SCHULE/cestina.
-const slug = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-fetch('SESIT.md?' + Date.now()).then(r => r.text()).then(md => {
-  const parts = md.split(/^(?=# )/m).filter(p => p.startsWith('# ') && !p.startsWith('# Sešit'));
-  const out = document.getElementById('out'), toc = document.getElementById('toc');
-  const items = parts.map(p => {
-    const title = p.match(/^# (.*)/)[1].trim(), id = slug(title);
-    const art = document.createElement('article');
-    art.id = id;
-    art.innerHTML = marked.parse(p.replace(/^\s*---\s*$/gm, ''));
-    // Kartičky: odpověď schovaná, klik ji ukáže
-    art.querySelectorAll('h2').forEach(h => {
-      const ul = h.nextElementSibling;
-      if (!/Kartičky/.test(h.textContent) || !ul || ul.tagName !== 'UL') return;
-      ul.className = 'cards';
-      ul.querySelectorAll('li').forEach(li => {
-        const s = [...li.querySelectorAll('strong')].find(x => /Odpověď/.test(x.textContent));
-        if (!s) return;
-        const a = document.createElement('span'); a.className = 'a';
-        while (s.nextSibling) a.appendChild(s.nextSibling);
-        a.prepend(s); li.appendChild(a);
-        li.onclick = () => li.classList.toggle('open');
-      });
-    });
-    out.appendChild(art);
-    const li = document.createElement('li');
-    li.innerHTML = `<a href="#${id}"></a>`; li.firstChild.textContent = title;
-    toc.appendChild(li);
-    return {art, li, text: slug(p)};
-  });
-  const count = document.getElementById('count');
-  const show = n => count.textContent = `${n} z ${items.length} zápisů`;
-  show(items.length);
-  document.getElementById('q').oninput = e => {
-    const q = slug(e.target.value); let n = 0;
-    items.forEach(i => { const ok = !q || i.text.includes(q); i.art.hidden = i.li.hidden = !ok; n += ok; });
-    show(n);
-  };
-  if (location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView();
-}).catch(() => document.getElementById('count').textContent = 'Sešit se nepodařilo načíst.');
-</script>
-</body>
-</html>
+// Převod postupu z Linek učení ze staré adresy mm.shotbylaro.eu (přijde v #m5=…)
+if(location.hash.startsWith("#m5=")){try{localStorage.setItem("metro5",decodeURIComponent(location.hash.slice(4)))}catch(_){}history.replaceState(null,"",location.pathname)}
+try{sessionStorage.setItem("mm_ok","1")}catch(_){}
+const S="vKHlEKv55KEgWrfxqxCjOg==",I="FnIJZd9fLEaJrzZa",C="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",u=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function open_(pw){
+  const k=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveKey"]);
+  const key=await crypto.subtle.deriveKey({name:"PBKDF2",salt:u(S),iterations:300000,hash:"SHA-256"},k,{name:"AES-GCM",length:256},false,["decrypt"]);
+  const html=new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:u(I)},key,u(C)));
+  try{localStorage.setItem("heslo",pw)}catch(_){}
+  document.open();document.write(html);document.close();
+}
+const e_=document.getElementById("e");
+f.onsubmit=e=>{e.preventDefault();e_.textContent="";open_(p.value).catch(()=>e_.textContent="Špatné heslo")};
+try{const s=localStorage.getItem("heslo");if(s)open_(s).catch(()=>localStorage.removeItem("heslo"))}catch(_){}
+</script></body></html>

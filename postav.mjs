@@ -10,6 +10,7 @@ import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 
 const P = "/Users/grig/Desktop/PROJECTS CC";
+const SCHULE = `${P}/CESTINA SESIT`;   // repo SCHULE, web skola.shotbylaro.eu
 const APP = `${P}/CESTINA ZKOUSENI/zkouseni 3rocniky/app`;
 const PAGES = {
   "":        { src: "zdroje/lobby.html", lobby: true },
@@ -25,6 +26,9 @@ const PAGES = {
   // C1 Advanced: bez odkazu zpět do lobby. Host má dočasné heslo z proměnné C1_HOST_HESLO (jen při buildu, nikde se neukládá),
   // platí do `until`; po tomhle datu ho build vynechá a brána ho odmítne. Vlastník otevře stránku hlavním heslem.
   c1:        { src: `${P}/vektory/c1/index.html`, noBack: true, guest: { env: "C1_HOST_HESLO", until: "2026-11-24" } },
+  // skola.shotbylaro.eu = repo SCHULE (složka nad tímhle webem): rozcestník všech předmětů a stránka Fotografie
+  skola:     { src: "zdroje/skola.html", lobby: true, out: `${SCHULE}/index.html` },
+  fotografie:{ src: "zdroje/fotografie.html", vars: { FOTO_MD: `${SCHULE}/fotografie/opakovani-k-mz-fft.md` }, out: `${SCHULE}/fotografie/index.html`, back: "← Škola" },
 };
 const ITER = 300000;
 
@@ -126,11 +130,12 @@ for (const [name, cfg] of Object.entries(PAGES)) {
   for (const [v, f] of Object.entries(cfg.vars || {}))
     html = html.replace(/<script/i, `<script>window.${v}=${scriptSafe(JSON.stringify(fs.readFileSync(path.resolve(root, f), "utf8")))};</script><script`);
   html = html.replaceAll("https://skola.shotbylaro.eu/opakovani/", "../opakovani/").replaceAll("https://skola.shotbylaro.eu/zkouseni/", "../zkouseni/");
-  if (!cfg.lobby && !cfg.noBack) html = /<\/body>/i.test(html) ? html.replace(/<\/body>(?![\s\S]*<\/body>)/i, BACK + "</body>") : html + BACK;
+  const back = cfg.back ? BACK.replace("← Čeština", cfg.back) : BACK;   // odkaz vždy na "/" vlastní domény
+  if (!cfg.lobby && !cfg.noBack) html = /<\/body>/i.test(html) ? html.replace(/<\/body>(?![\s\S]*<\/body>)/i, back + "</body>") : html + back;
   const title = (html.match(/<title>([^<]*)<\/title>/i) || [, "Čeština"])[1];
-  const outDir = path.join(root, name);
+  const outFile = cfg.out || path.join(root, name, "index.html"), outDir = path.dirname(outFile);
   fs.mkdirSync(outDir, { recursive: true });
-  fs.writeFileSync(path.join(outDir, "index.html"), cfg.guest ? gateGuest(title, html, cfg.guest) : gate(title, encrypt(html)));
+  fs.writeFileSync(outFile, cfg.guest ? gateGuest(title, html, cfg.guest) : gate(title, encrypt(html)));
   for (const a of cfg.assets || []) fs.copyFileSync(path.join(cfg.assetDir || srcDir, a), path.join(outDir, a));
   console.log(`✓ /${name}${name ? "/" : ""}  (${title})`);
 }

@@ -25,7 +25,8 @@ const PAGES = {
   primka:    { src: `${P}/vektory/primka.html` },
   // C1 Advanced: bez odkazu zpět do lobby. Host má dočasné heslo z proměnné C1_HOST_HESLO (jen při buildu, nikde se neukládá),
   // platí do `until`; po tomhle datu ho build vynechá a brána ho odmítne. Vlastník otevře stránku hlavním heslem.
-  c1:        { src: `${P}/vektory/c1/index.html`, noBack: true, guest: { env: "C1_HOST_HESLO", until: "2026-11-24" } },
+  // Výstup jde na skola.shotbylaro.eu/c1/ (repo SCHULE); cestina.shotbylaro.eu/c1/ je jen přesměrování.
+  c1:        { src: `${P}/vektory/c1/index.html`, noBack: true, guest: { env: "C1_HOST_HESLO", until: "2026-11-24" }, out: `${SCHULE}/c1/index.html` },
   // skola.shotbylaro.eu = repo SCHULE (složka nad tímhle webem): rozcestník všech předmětů a stránka Fotografie
   skola:     { src: "zdroje/skola.html", lobby: true, out: `${SCHULE}/index.html` },
   fotografie:{ src: "zdroje/fotografie.html", vars: { FOTO_MD: `${SCHULE}/fotografie/opakovani-k-mz-fft.md` }, out: `${SCHULE}/fotografie/index.html`, back: "← Škola" },

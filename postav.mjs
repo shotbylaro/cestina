@@ -19,7 +19,9 @@ const PAGES = {
   opakovani: { src: `${APP}/opakovani.html`, skeleton: true },
   okruhy:    { src: `${APP}/okruhy.html` },
   mm:        { src: `${P}/CESTINA minimetro seznam/mm/index.html` },
-  temp:      { src: `${P}/vektory/web/index.html`, assets: ["poster.jpg", "vektory.mp4", "vektory-dlouhe.mp4"] },
+  // zdroj Vektorů je kopie z gitové historie repa temp (jeho index.html je teď přesměrování sem)
+  temp:      { src: "zdroje/temp/index.html", assetDir: `${P}/vektory/web`, assets: ["poster.jpg", "vektory.mp4", "vektory-dlouhe.mp4"] },
+  primka:    { src: `${P}/vektory/primka.html` },
 };
 const ITER = 300000;
 
@@ -90,6 +92,6 @@ for (const [name, cfg] of Object.entries(PAGES)) {
   const outDir = path.join(root, name);
   fs.mkdirSync(outDir, { recursive: true });
   fs.writeFileSync(path.join(outDir, "index.html"), gate(title, encrypt(html)));
-  for (const a of cfg.assets || []) fs.copyFileSync(path.join(srcDir, a), path.join(outDir, a));
+  for (const a of cfg.assets || []) fs.copyFileSync(path.join(cfg.assetDir || srcDir, a), path.join(outDir, a));
   console.log(`✓ /${name}${name ? "/" : ""}  (${title})`);
 }

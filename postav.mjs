@@ -17,6 +17,7 @@ const PAGES = {
   maturita:  { src: `${P}/CESTINA SIMPLIFIED/web/index.html` },          // už zašifrovaná – rozšifruje se a zamkne znovu
   zkouseni:  { src: `${APP}/index.html`, skeleton: true },
   opakovani: { src: `${APP}/opakovani.html`, skeleton: true },
+  okruhy:    { src: `${APP}/okruhy.html` },
   mm:        { src: `${P}/CESTINA minimetro seznam/mm/index.html` },
   temp:      { src: `${P}/vektory/web/index.html`, assets: ["poster.jpg", "vektory.mp4", "vektory-dlouhe.mp4"] },
 };

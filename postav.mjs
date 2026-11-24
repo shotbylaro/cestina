@@ -22,6 +22,9 @@ const PAGES = {
   // zdroj Vektorů je kopie z gitové historie repa temp (jeho index.html je teď přesměrování sem)
   temp:      { src: "zdroje/temp/index.html", assetDir: `${P}/vektory/web`, assets: ["poster.jpg", "vektory.mp4", "vektory-dlouhe.mp4"] },
   primka:    { src: `${P}/vektory/primka.html` },
+  // C1 Advanced: bez odkazu zpět do lobby. Host má dočasné heslo z proměnné C1_HOST_HESLO (jen při buildu, nikde se neukládá),
+  // platí do `until`; po tomhle datu ho build vynechá a brána ho odmítne. Vlastník otevře stránku hlavním heslem.
+  c1:        { src: `${P}/vektory/c1/index.html`, noBack: true, guest: { env: "C1_HOST_HESLO", until: "2026-11-24" } },
 };
 const ITER = 300000;
 
@@ -30,9 +33,9 @@ const heslo = (process.env.WEB_HESLO || (() => { try { return fs.readFileSync(pa
 if (!heslo) { console.error("Chybí heslo: nastav WEB_HESLO nebo ulož heslo do ~/.cestina-heslo"); process.exit(1); }
 
 const b64 = b => Buffer.from(b).toString("base64");
-function encrypt(html) {
+function encrypt(html, pw = heslo) {
   const salt = crypto.randomBytes(16), iv = crypto.randomBytes(12);
-  const key = crypto.pbkdf2Sync(heslo, salt, ITER, 32, "sha256");
+  const key = crypto.pbkdf2Sync(pw, salt, ITER, 32, "sha256");
   const c = crypto.createCipheriv("aes-256-gcm", key, iv);
   const ct = Buffer.concat([c.update(html, "utf8"), c.final(), c.getAuthTag()]);   // WebCrypto čeká tag na konci
   return { S: b64(salt), I: b64(iv), C: b64(ct) };
@@ -76,6 +79,42 @@ try{const s=localStorage.getItem("heslo");if(s)open_(s).catch(()=>localStorage.r
 `;
 }
 
+// Brána se dvěma klíči: "owner" (hlavní heslo, pamatuje si ho localStorage "heslo" jako zbytek webu)
+// a "host" (dočasné heslo do g.until, pamatuje si ho jen localStorage "heslo-c1"; do "heslo" nikdy nesahá).
+// Varianta pro hosta má navíc window.C1_MODE="host". Skript je v uzavřené funkci, aby jeho proměnné
+// nekolidovaly s rozšifrovanou stránkou po document.write.
+function gateGuest(title, html, g) {
+  const V = [{ k: "owner", ...encrypt(html) }];
+  const gpw = (process.env[g.env] || "").trim(), today = new Date().toLocaleDateString("sv-SE");
+  if (gpw && today <= g.until) V.push({ k: "host", u: g.until, ...encrypt(html.replace(/<script/i, '<script>window.C1_MODE="host";</script><script'), gpw) });
+  else console.log(gpw ? `  (heslo hosta platilo do ${g.until}, stránka je jen s hlavním heslem)` : `  (bez hesla hosta – nastav ${g.env}, pokud ho chceš)`);
+  return `<!doctype html><html lang="cs"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>${title}</title>
+<style>body{font:16px system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;margin:0;padding:16px;box-sizing:border-box;background:#0f0a1f;color:#f1ecff}
+form{display:grid;gap:8px;max-width:320px;width:100%}input,button{font:inherit;padding:10px;border-radius:8px;border:2px solid #352a57;background:#1b1233;color:inherit}button{cursor:pointer;font-weight:600}#e{color:#ff5c70;min-height:1.2em}</style></head>
+<body><form id="f"><label for="p">Heslo</label><input id="p" type="password" autofocus autocomplete="current-password">
+<button>Vstoupit</button><div id="e" role="alert"></div></form>
+<script>
+(() => {
+const V=${JSON.stringify(V)},u=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0)),td=()=>new Date().toLocaleDateString("sv-SE");
+async function dec(v,pw){
+  const k=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveKey"]);
+  const key=await crypto.subtle.deriveKey({name:"PBKDF2",salt:u(v.S),iterations:${ITER},hash:"SHA-256"},k,{name:"AES-GCM",length:256},false,["decrypt"]);
+  return new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:u(v.I)},key,u(v.C)));
+}
+async function tryPw(pw,kinds){for(const v of V){if(!kinds.includes(v.k)||(v.u&&td()>v.u))continue;try{return {v,html:await dec(v,pw)}}catch(_){}}return null}
+function show(r,pw){try{localStorage.setItem(r.v.k==="host"?"heslo-c1":"heslo",pw)}catch(_){}document.open();document.write(r.html);document.close()}
+const form=document.getElementById("f"),inp=document.getElementById("p"),err=document.getElementById("e");
+form.onsubmit=async e=>{e.preventDefault();err.textContent="Ověřuju…";const r=await tryPw(inp.value,["owner","host"]);if(r)show(r,inp.value);else err.textContent="Špatné heslo, nebo už neplatí."};
+(async()=>{let s=null;try{s=localStorage.getItem("heslo")}catch(_){}
+  if(s){const r=await tryPw(s,["owner"]);if(r)return show(r,s)}
+  try{s=localStorage.getItem("heslo-c1")}catch(_){s=null}
+  if(s){const r=await tryPw(s,["host"]);if(r)return show(r,s);try{localStorage.removeItem("heslo-c1")}catch(_){}}})();
+})();
+</script></body></html>
+`;
+}
+
 const only = process.argv.slice(2);
 for (const [name, cfg] of Object.entries(PAGES)) {
   if (only.length && !only.includes(name || "lobby")) continue;
@@ -87,11 +126,11 @@ for (const [name, cfg] of Object.entries(PAGES)) {
   for (const [v, f] of Object.entries(cfg.vars || {}))
     html = html.replace(/<script/i, `<script>window.${v}=${scriptSafe(JSON.stringify(fs.readFileSync(path.resolve(root, f), "utf8")))};</script><script`);
   html = html.replaceAll("https://skola.shotbylaro.eu/opakovani/", "../opakovani/").replaceAll("https://skola.shotbylaro.eu/zkouseni/", "../zkouseni/");
-  if (!cfg.lobby) html = /<\/body>/i.test(html) ? html.replace(/<\/body>(?![\s\S]*<\/body>)/i, BACK + "</body>") : html + BACK;
+  if (!cfg.lobby && !cfg.noBack) html = /<\/body>/i.test(html) ? html.replace(/<\/body>(?![\s\S]*<\/body>)/i, BACK + "</body>") : html + BACK;
   const title = (html.match(/<title>([^<]*)<\/title>/i) || [, "Čeština"])[1];
   const outDir = path.join(root, name);
   fs.mkdirSync(outDir, { recursive: true });
-  fs.writeFileSync(path.join(outDir, "index.html"), gate(title, encrypt(html)));
+  fs.writeFileSync(path.join(outDir, "index.html"), cfg.guest ? gateGuest(title, html, cfg.guest) : gate(title, encrypt(html)));
   for (const a of cfg.assets || []) fs.copyFileSync(path.join(cfg.assetDir || srcDir, a), path.join(outDir, a));
   console.log(`✓ /${name}${name ? "/" : ""}  (${title})`);
 }

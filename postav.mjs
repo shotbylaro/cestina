@@ -30,6 +30,8 @@ const PAGES = {
   // skola.shotbylaro.eu = repo SCHULE (složka nad tímhle webem): rozcestník všech předmětů a stránka Fotografie
   skola:     { src: "zdroje/skola.html", lobby: true, out: `${SCHULE}/index.html` },
   fotografie:{ src: "zdroje/fotografie.html", vars: { FOTO_MD: `${SCHULE}/fotografie/opakovani-k-mz-fft.md` }, out: `${SCHULE}/fotografie/index.html`, back: "← Škola" },
+  // sešit z fotografie: zápisy k 20 okruhům FFT (SESIT.md ve složce fotografie repa SCHULE)
+  fotosesit: { src: "zdroje/fotografie-sesit.html", vars: { SESIT_MD: `${SCHULE}/fotografie/SESIT.md` }, out: `${SCHULE}/fotografie/sesit/index.html`, back: "← Škola" },
   // dočasné opáčko k okruhům FOT 1–9 (fragment bez <html>, proto skeleton)
   fotoopacko:{ src: "zdroje/foto-opacko.html", skeleton: true, out: `${SCHULE}/fotografie/opacko/index.html`, back: "← Škola" },
 };

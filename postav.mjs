@@ -33,6 +33,8 @@ const PAGES = {
   // sešit z fotografie: zápisy k 20 okruhům FFT (SESIT.md ve složce fotografie repa SCHULE)
   fotosesit: { src: "zdroje/fotografie-sesit.html", vars: { SESIT_MD: `${SCHULE}/fotografie/SESIT.md` }, out: `${SCHULE}/fotografie/sesit/index.html`, back: "← Škola" },
   // dočasné opáčko k okruhům FOT 1–9 (fragment bez <html>, proto skeleton)
+  // Angličtina: tahák na C1 Writing (essay, letter, report, proposal, review + barevné linkery)
+  c1writing: { src: "zdroje/c1-writing.html", out: `${SCHULE}/c1-writing/index.html`, back: "← Škola" },
   fotoopacko:{ src: "zdroje/foto-opacko.html", skeleton: true, out: `${SCHULE}/fotografie/opacko/index.html`, back: "← Škola" },
 };
 const ITER = 300000;

@@ -35,7 +35,7 @@ const PAGES = {
   // dočasné opáčko k okruhům FOT 1–9 (fragment bez <html>, proto skeleton)
   // Angličtina: tahák na C1 Writing (essay, letter, report, proposal, review + barevné linkery)
   // Host (kámoš) má dočasné heslo z WRITING_HOST_HESLO (jen při buildu, nikde se neukládá), platí do `until` včetně; bez odkazu do lobby.
-  c1writing: { src: "zdroje/c1-writing.html", out: `${SCHULE}/c1-writing/index.html`, noBack: true, guest: { env: "WRITING_HOST_HESLO", until: "2026-11-27" } },
+  c1writing: { src: "zdroje/c1-writing.html", out: `${SCHULE}/c1-writing/index.html`, noBack: true, guest: { env: "WRITING_HOST_HESLO", until: "2026-11-28" } },
   fotoopacko:{ src: "zdroje/foto-opacko.html", skeleton: true, out: `${SCHULE}/fotografie/opacko/index.html`, back: "← Škola" },
 };
 const ITER = 300000;
